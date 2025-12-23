@@ -100,8 +100,9 @@ export default function ReaderPane({
         const handleSelectionChange = () => {
             const sel = window.getSelection();
 
+            // If selection is invalid (e.g. collapsed/clicked away), clear our state
             if (!isValidSelection(sel)) {
-                // Don't immediately clear - give a small delay for click handling
+                setSelection(prev => (prev ? null : prev)); // Only update if needed to avoid re-renders
                 return;
             }
 
@@ -142,9 +143,6 @@ export default function ReaderPane({
                 current = current.parentNode;
             }
 
-            // For HTML content (URL articles): Use page 0 to indicate non-PDF
-            // The anchor creation will handle this appropriately
-
             // Calculate position for toolbar
             const rect = range.getBoundingClientRect();
             const containerRect = containerRef.current.getBoundingClientRect();
@@ -162,23 +160,17 @@ export default function ReaderPane({
 
         const handleMouseUp = () => {
             // Small delay to ensure selection is complete
-            setTimeout(handleSelectionChange, 50);
-        };
-
-        const handleScroll = () => {
-            setSelection(null);
-            clearSelection();
+            setTimeout(handleSelectionChange, 10);
         };
 
         // Use window.document to avoid prop shadowing
         window.document.addEventListener('selectionchange', handleSelectionChange);
         containerRef.current?.addEventListener('mouseup', handleMouseUp);
-        containerRef.current?.addEventListener('scroll', handleScroll);
+        // Removed scroll listener as it causes annoying selection clearing
 
         return () => {
             window.document.removeEventListener('selectionchange', handleSelectionChange);
             containerRef.current?.removeEventListener('mouseup', handleMouseUp);
-            containerRef.current?.removeEventListener('scroll', handleScroll);
         };
     }, []);
 
@@ -332,6 +324,8 @@ export default function ReaderPane({
           padding: var(--spacing-2xl) var(--spacing-lg);
           overflow-y: auto;
           position: relative;
+          user-select: text;
+          -webkit-user-select: text;
         }
 
         .reader-content {
