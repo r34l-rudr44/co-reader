@@ -1,0 +1,104 @@
+/* ============================================
+   Co-Reader Design Tokens
+   A private intellectual workspace
+   ============================================ */
+
+/* Google Fonts Import - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&display=swap');
+
+:root {
+   /* Typography */
+   --font-reader: 'Literata', 'Charter', 'Georgia', serif;
+   --font-size-base: 18px;
+   --line-height-reader: 1.7;
+   --line-length-max: 70ch;
+
+   /* Spacing */
+   --spacing-xs: 4px;
+   --spacing-sm: 8px;
+   --spacing-md: 16px;
+   --spacing-lg: 24px;
+   --spacing-xl: 32px;
+   --spacing-2xl: 48px;
+
+   /* Layout */
+   --topbar-height: 48px;
+   --margin-panel-width: 30%;
+   --reader-pane-width: 70%;
+
+   /* Transitions */
+   --transition-fast: 150ms ease;
+   --transition-normal: 250ms ease;
+
+   /* Z-index layers */
+   --z-highlight: 1;
+   --z-text: 2;
+   --z-toolbar: 100;
+   --z-topbar: 50;
+   --z-panel: 40;
+
+   /* Dividers */
+   --divider: rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   Light Theme (Default)
+   ============================================ */
+
+[data-theme="light"],
+:root {
+   /* Backgrounds */
+   --bg-primary: #FBF6F3;
+   --bg-secondary: #F5EDE8;
+   --bg-panel: #F8F2EE;
+
+   /* Text */
+   --text-primary: #1A1A1A;
+   --text-secondary: #4A4A4A;
+   --text-muted: #7A7A7A;
+
+   /* Highlights (10-18% opacity for readability) */
+   --hl-insight: rgba(255, 214, 102, 0.14);
+   --hl-insight-solid: #FFD666;
+   --hl-definition: rgba(102, 170, 255, 0.14);
+   --hl-definition-solid: #66AAFF;
+   --hl-question: rgba(255, 120, 120, 0.14);
+   --hl-question-solid: #FF7878;
+
+   /* UI Elements */
+   --border-color: rgba(0, 0, 0, 0.08);
+   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
+   --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Dark Theme
+   ============================================ */
+
+[data-theme="dark"] {
+   /* Backgrounds */
+   --bg-primary: #121212;
+   --bg-secondary: #1A1A1A;
+   --bg-panel: #181818;
+
+   /* Text */
+   --text-primary: #EDEDED;
+   --text-secondary: #B0B0B0;
+   --text-muted: #707070;
+
+   /* Highlights (slightly more saturated for dark mode) */
+   --hl-insight: rgba(255, 214, 102, 0.18);
+   --hl-insight-solid: #FFD666;
+   --hl-definition: rgba(102, 170, 255, 0.18);
+   --hl-definition-solid: #66AAFF;
+   --hl-question: rgba(255, 120, 120, 0.18);
+   --hl-question-solid: #FF7878;
+
+   /* UI Elements */
+   --border-color: rgba(255, 255, 255, 0.08);
+   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
+   --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+   /* Dividers */
+   --divider: rgba(255, 255, 255, 0.08);
+}
