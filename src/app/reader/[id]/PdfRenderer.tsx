@@ -43,7 +43,8 @@ export default function PdfRenderer({
         const loadPdfJs = async () => {
             try {
                 const pdfjsLib = await import('pdfjs-dist');
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+                // Use local worker file copied from node_modules
+                pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
                 setPdfLib(pdfjsLib);
             } catch (err) {
                 console.error('Failed to load pdf.js:', err);
