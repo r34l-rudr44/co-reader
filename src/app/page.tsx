@@ -4,11 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { Document } from '@/lib/types';
 import {
   getAllDocuments,
-  createDocument,
-  deleteDocument,
   getStorageUsageString,
   clearAllData,
 } from '@/lib/documents';
+import { cloudDocs } from '@/lib/cloudDocuments';
 import { storePdf, deletePdf } from '@/lib/cloudStorage';
 import { fetchAndStoreArticle, deleteArticle } from '@/lib/articles';
 import { deleteHighlightsByDocument } from '@/lib/highlights';
@@ -19,6 +18,7 @@ export default function HomePage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [storageUsage, setStorageUsage] = useState('');
@@ -26,9 +26,22 @@ export default function HomePage() {
   const [uploadProgress, setUploadProgress] = useState('');
   const router = useRouter();
 
+  // Load documents from cloud (with localStorage fallback)
   useEffect(() => {
-    setDocuments(getAllDocuments());
-    setStorageUsage(getStorageUsageString());
+    async function loadDocuments() {
+      setIsLoadingDocs(true);
+      try {
+        const docs = await cloudDocs.getAll();
+        setDocuments(docs);
+      } catch (error) {
+        console.warn('Failed to load from cloud, using localStorage');
+        setDocuments(getAllDocuments());
+      } finally {
+        setIsLoadingDocs(false);
+        setStorageUsage(getStorageUsageString());
+      }
+    }
+    loadDocuments();
   }, []);
 
   const handleFileUpload = useCallback(async (file: File) => {
@@ -38,26 +51,24 @@ export default function HomePage() {
     }
 
     setIsLoading(true);
-    setUploadProgress('Uploading to cloud...');
+    setUploadProgress('Creating document...');
 
     try {
-      // Generate document ID first
+      // Create document in cloud database
       const title = file.name.replace('.pdf', '');
-      const doc = createDocument(title, 'pdf', ''); // Create with empty path first
+      const doc = await cloudDocs.create(title, 'pdf', ''); // Create with empty path first
 
       // Upload PDF to cloud storage
       setUploadProgress('Uploading PDF...');
       const pdfUrl = await storePdf(file, doc.id);
 
       // Update document with the storage URL
-      const documents = getAllDocuments();
-      const index = documents.findIndex(d => d.id === doc.id);
-      if (index !== -1) {
-        documents[index].sourcePath = pdfUrl;
-        localStorage.setItem('coreader_documents', JSON.stringify(documents));
-      }
+      setUploadProgress('Saving...');
+      await cloudDocs.update(doc.id, { sourcePath: pdfUrl });
 
-      setDocuments(getAllDocuments());
+      // Refresh documents list
+      const docs = await cloudDocs.getAll();
+      setDocuments(docs);
       setStorageUsage(getStorageUsageString());
 
       // Navigate to reader
@@ -78,14 +89,17 @@ export default function HomePage() {
     let docId: string | null = null;
 
     try {
-      // Create document record first
-      const doc = createDocument(urlInput, 'url', urlInput);
+      // Create document record in cloud
+      const doc = await cloudDocs.create(urlInput, 'url', urlInput);
       docId = doc.id;
 
-      // Fetch and store article content
+      // Fetch and store article content (stored locally for now)
       await fetchAndStoreArticle(doc.id, urlInput);
 
-      setDocuments(getAllDocuments());
+      // Refresh documents
+      const docs = await cloudDocs.getAll();
+      setDocuments(docs);
+
       setUrlInput('');
       setShowUrlInput(false);
 
@@ -96,7 +110,7 @@ export default function HomePage() {
       alert(error.message || 'Failed to fetch article. Please check the URL.');
       // Clean up the failed document
       if (docId) {
-        deleteDocument(docId);
+        await cloudDocs.delete(docId);
       }
     } finally {
       setIsLoading(false);
@@ -135,8 +149,8 @@ export default function HomePage() {
   const handleDeleteDocument = useCallback(async (id: string, sourceType: string, sourcePath: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this document and all its data?')) {
-      // Delete the document record
-      deleteDocument(id);
+      // Delete the document record from cloud
+      await cloudDocs.delete(id);
 
       // Clean up associated data
       if (sourceType === 'pdf' && sourcePath) {
@@ -154,7 +168,8 @@ export default function HomePage() {
       deleteVocabularyByDocument(id);
 
       // Refresh state
-      setDocuments(getAllDocuments());
+      const docs = await cloudDocs.getAll();
+      setDocuments(docs);
       setStorageUsage(getStorageUsageString());
     }
   }, []);

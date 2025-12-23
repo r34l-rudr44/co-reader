@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Document } from '@/lib/types';
 import { getDocumentById } from '@/lib/documents';
+import { cloudDocs } from '@/lib/cloudDocuments';
 import { getArticleById } from '@/lib/articles';
 import { getPdfUrl, isCloudUrl } from '@/lib/cloudStorage';
 import ReaderLayout from './ReaderLayout';
@@ -27,7 +28,8 @@ export default function ReaderPage() {
                 return;
             }
 
-            const doc = getDocumentById(docId);
+            // Try to get from cloud first, then local fallback (handled by cloudDocs)
+            const doc = await cloudDocs.getById(docId);
 
             if (!doc) {
                 setError('Document not found');
