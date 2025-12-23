@@ -45,27 +45,43 @@ export default function ReaderPage() {
 
                     // If it's a cloud URL, fetch the PDF and convert to data URL
                     if (isCloudUrl(doc.sourcePath)) {
-                        const response = await fetch(pdfUrl);
-                        const blob = await response.blob();
-                        const reader = new FileReader();
+                        try {
+                            const response = await fetch(pdfUrl, {
+                                mode: 'cors',
+                                credentials: 'omit',
+                            });
 
-                        reader.onload = () => {
-                            setPdfData(reader.result as string);
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: Failed to fetch PDF`);
+                            }
+
+                            const blob = await response.blob();
+                            const reader = new FileReader();
+
+                            reader.onload = () => {
+                                setPdfData(reader.result as string);
+                                setLoading(false);
+                            };
+
+                            reader.onerror = () => {
+                                setError('Failed to read PDF data');
+                                setLoading(false);
+                            };
+
+                            reader.readAsDataURL(blob);
+                            return; // Loading will be set to false in reader callbacks
+                        } catch (fetchErr: any) {
+                            console.error('Cloud PDF fetch error:', fetchErr);
+                            setError(`Failed to load PDF from cloud: ${fetchErr.message}`);
                             setLoading(false);
-                        };
-
-                        reader.onerror = () => {
-                            setError('Failed to load PDF');
-                            setLoading(false);
-                        };
-
-                        reader.readAsDataURL(blob);
-                        return; // Loading will be set to false in reader callbacks
+                            return;
+                        }
                     } else {
                         // Local storage - pdfUrl is already the data URL
                         setPdfData(pdfUrl);
                     }
                 } catch (err: any) {
+                    console.error('PDF load error:', err);
                     setError(err.message || 'PDF data not found');
                     setLoading(false);
                     return;
