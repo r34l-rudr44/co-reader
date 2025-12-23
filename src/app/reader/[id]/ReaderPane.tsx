@@ -46,7 +46,7 @@ const PdfRenderer = dynamic(() => import('./PdfRenderer'), {
 
 interface ReaderPaneProps {
     docData: DocType;
-    pdfData: string | null;
+    pdfData: string | Uint8Array | null;
     htmlContent: string | null;
     settings: ReaderSettings;
     onHighlightClick: (highlight: Highlight) => void;

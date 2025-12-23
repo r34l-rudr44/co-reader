@@ -8,7 +8,7 @@ import MarginNotesPanel from './MarginNotesPanel';
 
 interface ReaderLayoutProps {
     document: DocType;
-    pdfData: string | null;
+    pdfData: string | Uint8Array | null;
     htmlContent: string | null;
 }
 

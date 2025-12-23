@@ -8,7 +8,7 @@ type PDFDocumentProxy = any;
 type PDFPageProxy = any;
 
 interface PdfRendererProps {
-    pdfData: string;
+    pdfData: string | Uint8Array;
     highlights: Highlight[];
     onHighlightClick: (highlight: Highlight) => void;
     onTextSelect?: (text: string, pageNumber: number, rects: BoundingRect[]) => void;
@@ -64,19 +64,28 @@ export default function PdfRenderer({
                 setLoading(true);
                 setError(null);
 
-                // Extract base64 data from data URL
-                const base64Data = pdfData.split(',')[1];
-                const binaryData = atob(base64Data);
+                let loadingTask;
 
-                const loadingTask = pdfLib.getDocument({ data: binaryData });
+                if (typeof pdfData === 'string') {
+                    // Legacy base64 support (for local storage)
+                    const base64Data = pdfData.includes(',') ? pdfData.split(',')[1] : pdfData;
+                    // Binary string method is deprecated but we keep it for now for string inputs
+                    const binaryData = atob(base64Data);
+                    loadingTask = pdfLib.getDocument({ data: binaryData });
+                } else {
+                    // Modern Uint8Array support (for cloud storage)
+                    // We need to clone it because pdfjs might detach the buffer
+                    loadingTask = pdfLib.getDocument({ data: new Uint8Array(pdfData) });
+                }
+
                 const doc = await loadingTask.promise;
 
                 setPdfDoc(doc);
                 setNumPages(doc.numPages);
                 setLoading(false);
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Failed to load PDF:', err);
-                setError('Failed to load PDF document');
+                setError(`Failed to load PDF document: ${err.message}`);
                 setLoading(false);
             }
         };

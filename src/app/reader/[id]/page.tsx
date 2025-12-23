@@ -13,7 +13,7 @@ export default function ReaderPage() {
     const params = useParams();
     const router = useRouter();
     const [document, setDocument] = useState<Document | null>(null);
-    const [pdfData, setPdfData] = useState<string | null>(null);
+    const [pdfData, setPdfData] = useState<string | Uint8Array | null>(null);
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function ReaderPage() {
                     // Get PDF URL (handles both cloud and local storage)
                     const pdfUrl = await getPdfUrl(doc.sourcePath);
 
-                    // If it's a cloud URL, fetch the PDF and convert to data URL
+                    // If it's a cloud URL, fetch the PDF and convert to ArrayBuffer
                     if (isCloudUrl(doc.sourcePath)) {
                         try {
                             const response = await fetch(pdfUrl, {
@@ -57,36 +57,23 @@ export default function ReaderPage() {
                                 throw new Error(`HTTP ${response.status}: Failed to fetch PDF`);
                             }
 
-                            const blob = await response.blob();
-                            const reader = new FileReader();
-
-                            reader.onload = () => {
-                                setPdfData(reader.result as string);
-                                setLoading(false);
-                            };
-
-                            reader.onerror = () => {
-                                setError('Failed to read PDF data');
-                                setLoading(false);
-                            };
-
-                            reader.readAsDataURL(blob);
-                            return; // Loading will be set to false in reader callbacks
+                            const arrayBuffer = await response.arrayBuffer();
+                            setPdfData(new Uint8Array(arrayBuffer));
+                            setLoading(false);
                         } catch (fetchErr: any) {
                             console.error('Cloud PDF fetch error:', fetchErr);
                             setError(`Failed to load PDF from cloud: ${fetchErr.message}`);
                             setLoading(false);
-                            return;
                         }
                     } else {
-                        // Local storage - pdfUrl is already the data URL
+                        // Local storage - pdfUrl is base64 string
                         setPdfData(pdfUrl);
+                        setLoading(false);
                     }
                 } catch (err: any) {
                     console.error('PDF load error:', err);
                     setError(err.message || 'PDF data not found');
                     setLoading(false);
-                    return;
                 }
             } else if (doc.sourceType === 'url') {
                 const article = getArticleById(doc.id);
@@ -101,9 +88,10 @@ export default function ReaderPage() {
                     doc.title = article.title;
                     setDocument({ ...doc, title: article.title });
                 }
+                setLoading(false);
+            } else {
+                setLoading(false);
             }
-
-            setLoading(false);
         }
 
         loadDocument();
