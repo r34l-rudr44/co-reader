@@ -227,15 +227,20 @@ function PdfPage({
                 textLayer.style.width = `${viewport.width}px`;
                 textLayer.style.height = `${viewport.height}px`;
 
-                // Build full page text and create text spans
+                // Use official renderTextLayer for correct selection behavior
+                await pdfLib.renderTextLayer({
+                    textContentSource: textContent,
+                    container: textLayer,
+                    viewport: viewport,
+                    textDivs: []
+                }).promise;
+
+                // Build text metadata for highlighting system (separate from DOM)
                 let fullText = '';
                 const spans: TextSpan[] = [];
 
                 textContent.items.forEach((item: any) => {
                     if ('str' in item && item.str) {
-                        const span = document.createElement('span');
-                        span.textContent = item.str;
-
                         const tx = pdfLib.Util.transform(
                             viewport.transform,
                             item.transform
@@ -244,13 +249,6 @@ function PdfPage({
                         const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
                         const left = tx[4];
                         const top = tx[5] - fontSize;
-
-                        span.style.position = 'absolute';
-                        span.style.left = `${left}px`;
-                        span.style.top = `${top}px`;
-                        span.style.fontSize = `${fontSize}px`;
-                        span.style.fontFamily = 'sans-serif';
-                        span.style.transformOrigin = '0% 0%';
 
                         // Store span info for highlight positioning
                         spans.push({
@@ -263,7 +261,6 @@ function PdfPage({
                         });
 
                         fullText += item.str + ' ';
-                        textLayer.appendChild(span);
                     }
                 });
 
